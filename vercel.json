@@ -1,12 +1,7 @@
 {
+  "cleanUrls": true,
   "rewrites": [
-    {
-      "source": "/timer",
-      "destination": "/mhxy/timer.html"
-    },
-    {
-      "source": "/simulator",
-      "destination": "/mhxy/simulator.html"
-    }
+    { "source": "/mhxy/timer", "destination": "/mhxy/timer.html" },
+    { "source": "/mhxy/simulator", "destination": "/mhxy/simulator.html" }
   ]
 }
