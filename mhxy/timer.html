@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT: MERCHANTS v7.0 // EVA SYSTEM</title>
+    <!-- 引入科技感字体 Share Tech Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- 引入中文字体 ZCOOL XiaoWei (站酷小薇体) -->
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --eva-orange: #ff9900;
+            --eva-red: #ff2a2a;
+            --eva-green: #2aff2a;
+            --eva-blue: #00ccff;
+            --bg-color: #000;
+            --grid-line: #221100;
+            --panel-bg: rgba(20, 10, 0, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--eva-orange);
+            font-family: 'Share Tech Mono', monospace;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* 主容器 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 40% 1fr;
+            gap: 15px;
+            width: 98%;
+            max-width: 1400px;
+            height: 94vh;
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 通用面板 */
+        .panel {
+            border: 1px solid var(--eva-orange);
+            background: var(--panel-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.1);
+        }
+
+        .panel-header {
+            font-size: 1.2rem;
+            border-bottom: 2px solid var(--eva-orange);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 153, 0, 0.1);
+        }
+
+        .tag {
+            background: var(--eva-orange);
+            color: black;
+            padding: 0 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            font-family: 'Share Tech Mono', monospace;
+            min-width: 60px;
+            text-align: center;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* 倒计时警告状态 */
+        .tag.warning {
+            background: var(--eva-red);
+            color: black;
+        }
+        
+        .tag.critical {
+            background: var(--eva-red);
+            color: white;
+            animation: flashAlert 1s infinite alternate;
+        }
+
+        @keyframes flashAlert {
+            from { opacity: 1; }
+            to { opacity: 0.5; background: black; color: var(--eva-red); }
+        }
+
+        /* 左侧布局 */
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .timer-panel { flex-grow: 1; }
+
+        /* 右侧布局 */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+        }
+        .counter-panel { flex: 0 0 35%; min-height: 200px; }
+        .merchant-panel { flex: 1; overflow: hidden; }
+
+        /* 显示区域 */
+        .display-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 5rem;
+            text-shadow: 0 0 10px var(--eva-orange);
+        }
+        .counter-display { font-size: 7rem; }
+        .timer-display { font-size: 5rem; }
+
+        /* 按钮 */
+        .controls {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            background: transparent;
+            border: 1px solid var(--eva-orange);
+            color: var(--eva-orange);
+            font-family: 'Share Tech Mono', monospace;
+            padding: 8px 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-transform: uppercase;
+        }
+        button:hover { background: rgba(255, 153, 0, 0.2); box-shadow: 0 0 8px var(--eva-orange); }
+        button:active { background: var(--eva-orange); color: black; }
+        button.danger { border-color: var(--eva-red); color: var(--eva-red); }
+        button.danger:hover { background: rgba(255, 42, 42, 0.2); }
+
+        /* Log */
+        .log-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            border-top: 1px dashed var(--eva-orange);
+            padding: 10px;
+            font-size: 0.85rem;
+            margin: 0 10px 10px 10px;
+            max-height: 300px;
+        }
+        .log-item { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 153, 0, 0.2); padding: 2px 0; }
+        .log-result { color: var(--eva-green); font-weight: bold; padding: 5px 0; border-bottom: 1px solid var(--eva-green); }
+
+        /* Mode & Input */
+        .mode-switch {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed rgba(255,153,0,0.3);
+            padding: 15px;
+            justify-content: center;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border: 1px solid var(--eva-orange);
+            margin-right: 8px;
+            border-radius: 0; 
+            display: grid;
+            place-content: center;
+            background: transparent;
+        }
+        
+        input[type="radio"]::before {
+            content: "";
+            width: 9px;
+            height: 9px;
+            transform: scale(0);
+            transition: 0.1s transform;
+            background-color: var(--eva-orange);
+        }
+
+        input[type="radio"]:checked::before {
+            transform: scale(1);
+        }
+
+        input[type="radio"]:checked {
+            border-color: var(--eva-orange);
+            box-shadow: 0 0 5px var(--eva-orange);
+        }
+
+        .input-group { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px; opacity: 0.5; transition: opacity 0.3s; }
+        .input-group.active { opacity: 1; }
+        input[type="number"] { background: transparent; border: 1px solid var(--eva-orange); color: var(--eva-orange); font-family: inherit; padding: 5px; width: 60px; text-align: center; }
+
+        /* === 商人系统样式 === */
+        .merchant-grid {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .city-row {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 153, 0, 0.3);
+            flex: 1; 
+            min-height: 80px; 
+            margin-bottom: 5px;
+        }
+
+        .city-btn {
+            width: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid var(--eva-orange);
+            font-size: 1.4rem; 
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            font-family: 'ZCOOL XiaoWei', serif;
+        }
+        .city-btn:hover { background: rgba(255, 153, 0, 0.1); }
+        .city-btn:active { background: rgba(255, 153, 0, 0.3); }
+
+        .city-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .city-tabs {
+            flex: 1;
+            display: flex;
+            border-bottom: 1px solid var(--eva-orange); 
+        }
+        .tab {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.95rem; 
+            background: rgba(0,0,0,0.5);
+            color: #774400;
+            transition: all 0.2s;
+            font-family: 'ZCOOL XiaoWei', serif; 
+        }
+        .tab.active {
+            background: var(--eva-orange);
+            color: black;
+            font-weight: bold;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .goods-list {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            align-items: center;
+            padding: 0;
+        }
+        .good-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+            border-right: 1px dashed rgba(255, 153, 0, 0.3);
+        }
+        .good-item:last-child { border-right: none; }
+        
+        .good-name { color: #ccc; font-size: 0.8rem; font-family: 'Share Tech Mono', monospace; }
+        .good-price { color: var(--eva-orange); font-weight: bold; font-size: 0.9rem; font-family: 'Share Tech Mono', monospace; }
+
+        /* === 模态框 === */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); z-index: 999;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal-box {
+            border: 2px solid var(--eva-red); background: black; padding: 30px;
+            text-align: center; box-shadow: 0 0 30px var(--eva-red);
+            animation: flashRed 0.5s infinite alternate;
+        }
+        @keyframes flashRed { from { box-shadow: 0 0 10px var(--eva-red); } to { box-shadow: 0 0 30px var(--eva-red); } }
+        .modal-title { font-size: 2rem; color: var(--eva-red); margin-bottom: 10px; }
+        .modal-text { font-size: 1.2rem; margin-bottom: 20px; color: white; }
+        .modal-btns { display: flex; justify-content: center; gap: 20px; }
+        .btn-confirm { border-color: var(--eva-red); color: var(--eva-red); }
+        .btn-confirm:hover { background: var(--eva-red); color: black; }
+
+        /* === 底部 Footer (斜体) === */
+        .footer {
+            margin-top: auto;
+            margin-bottom: 5px;
+            font-size: 11px;
+            opacity: 0.6;
+            letter-spacing: 1px;
+            text-align: center;
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: var(--eva-orange); }
+
+        .active-pulse { animation: pulse 0.15s linear; }
+        @keyframes pulse {
+            0% { background-color: rgba(255, 153, 0, 0); }
+            50% { background-color: rgba(255, 153, 0, 0.3); }
+            100% { background-color: rgba(255, 153, 0, 0); }
+        }
+
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; height: auto; display: block; }
+            .right-column { margin-top: 15px; }
+            body { overflow-y: auto; height: auto; }
+            .city-row { min-height: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <!-- 左侧栏：计时器 -->
+        <div class="left-column">
+            <div class="panel timer-panel" id="panel-timer">
+                <div class="panel-header">
+                    CHRONO UNIT
+                    <span class="tag">SYNC-A</span>
+                </div>
+
+                <div class="mode-switch">
+                    <label class="radio-label">
+                        <input type="radio" name="mode" value="independent" checked onchange="toggleMode()"> INDEPENDENT
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="mode" value="linked" onchange="toggleMode()"> LINKED
+                    </label>
+                </div>
+                
+                <div class="input-group" id="linked-settings">
+                    <span>TARGET:</span>
+                    <!-- 默认值改为 20 -->
+                    <input type="number" id="target-count" value="20" min="1">
+                </div>
+
+                <div class="display-area timer-display" id="timer-display">00:00.00</div>
+
+                <div class="log-container" id="timer-log">
+                    <div class="log-item" style="color: #666">SYSTEM READY...</div>
+                </div>
+
+                <div class="controls">
+                    <button id="btn-start" onclick="toggleTimer()">START [ENTER]</button>
+                    <button id="btn-lap" onclick="recordLap()">LAP / MARK</button>
+                    <button class="danger" onclick="resetTimer()">RESET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧栏 -->
+        <div class="right-column">
+            <!-- 计数器 -->
+            <div class="panel counter-panel" id="panel-counter">
+                <div class="panel-header">
+                    COUNT UNIT
+                    <span class="tag">SYNC-B</span>
+                </div>
+                
+                <div class="display-area counter-display" id="count-display" onclick="incrementCount()">0</div>
+
+                <div class="controls">
+                    <button onclick="incrementCount()">+ COUNT [SPACE]</button>
+                    <button onclick="undoCount()">UNDO</button>
+                    <button class="danger" onclick="resetCount()">RESET</button>
+                </div>
+            </div>
+
+            <!-- 商人监控 -->
+            <div class="panel merchant-panel">
+                <div class="panel-header">
+                    MARKET MONITOR
+                    <span class="tag" id="market-status">LOADING...</span>
+                </div>
+                <div class="merchant-grid" id="merchant-container">
+                    <!-- JS动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">Created By Kaspar & Gemini</div>
+
+    <!-- 确认模态框 -->
+    <div class="modal-overlay" id="reset-modal">
+        <div class="modal-box">
+            <div class="modal-title">WARNING</div>
+            <div class="modal-text">INITIATE GLOBAL SYSTEM RESET?</div>
+            <div class="modal-btns">
+                <button class="btn-confirm" onclick="confirmGlobalReset()">CONFIRM [ENTER/BKSP]</button>
+                <button onclick="cancelGlobalReset()">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 核心变量
+        // ==========================================
+        let count = 0;
+        let timerInterval = null;
+        let startTime = 0;
+        let elapsedTime = 0;
+        let isRunning = false;
+        
+        let lapTimestamps = [0]; 
+        let lastLapTime = 0;
+
+        let currentMode = 'independent';
+        let isResetPending = false; 
+
+        // ==========================================
+        // 商人数据配置
+        // ==========================================
+        const merchantData = [
+            {
+                city: "长寿",
+                tabs: [" 长寿 · 左 [瘦子]", "长寿 · 右 [胖子]"],
+                goods: [
+                    { n: "木材", p: 4400 }, { n: "面粉", p: 3000 }, { n: "鹿茸", p: 7500 }, { n: "符", p: 5300 }
+                ]
+            },
+            {
+                city: "傲来",
+                tabs: [" 傲来 · 左 [胖子]", "傲来 · 右 [瘦子]"],
+                goods: [
+                    { n: "盐", p: 5500 }, { n: "帽子", p: 3500 }, { n: "酒", p: 4000 }, { n: "蜡烛", p: 2000 }
+                ]
+            },
+            {
+                city: "北俱",
+                tabs: [" 北俱 · 上 [胖子]", "北俱 · 下 [瘦子]"],
+                goods: [
+                    { n: "衣甲", p: 2700 }, { n: "人参", p: 7500 }, { n: "香油", p: 4000 }, { n: "铜铃", p: 4300 }
+                ]
+            },
+            {
+                city: "长安",
+                tabs: [" 长安 · 左 [胖子]", "长安 · 右 [瘦子]"],
+                goods: [
+                    { n: "棉布", p: 3500 }, { n: "佛珠", p: 7000 }, { n: "扇子", p: 3800 }, { n: "武器", p: 4000 }
+                ]
+            },
+            {
+                city: "地府",
+                tabs: [" 地府 · 上 [胖子]", "地府 · 下 [瘦子]"],
+                goods: [
+                    { n: "珍珠", p: 5500 }, { n: "项链", p: 4300 }, { n: "纸钱", p: 3000 }, { n: "夜明珠", p: 8000 }
+                ]
+            }
+        ];
+
+        let cityStates = [0, 0, 0, 0, 0]; 
+        let longPressTimer = null;
+
+        window.onload = function() {
+            renderMerchants();
+            toggleMode();
+            startAutoResetClock(); 
+            startMarketCountdown(); 
+        };
+
+        // ==========================================
+        // 1. 计数器
+        // ==========================================
+        function updateCountDisplay() {
+            document.getElementById('count-display').textContent = count;
+        }
+
+        function incrementCount() {
+            triggerPulse(document.getElementById('panel-counter'));
+            count++;
+            updateCountDisplay();
+
+            if (currentMode === 'linked' && isRunning) {
+                const target = parseInt(document.getElementById('target-count').value) || 0;
+                recordLap(true); 
+                if (count >= target) {
+                    toggleTimer();
+                    calculateAverage(target);
+                }
+            }
+        }
+
+        function undoCount() {
+            if (count > 0) {
+                count--;
+                updateCountDisplay();
+
+                if (currentMode === 'linked') {
+                     const logContainer = document.getElementById('timer-log');
+                     if (logContainer.firstElementChild && logContainer.firstElementChild.innerHTML.includes('#')) {
+                         logContainer.removeChild(logContainer.firstElementChild);
+                         if (lapTimestamps.length > 1) {
+                             lapTimestamps.pop(); 
+                             lastLapTime = lapTimestamps[lapTimestamps.length - 1]; 
+                         }
+                     }
+                }
+            }
+        }
+
+        function resetCount() {
+            count = 0;
+            updateCountDisplay();
+        }
+
+        // ==========================================
+        // 2. 计时器
+        // ==========================================
+        function formatTime(ms) {
+            const date = new Date(ms);
+            const m = date.getUTCMinutes().toString().padStart(2, '0');
+            const s = date.getUTCSeconds().toString().padStart(2, '0');
+            const mls = Math.floor(date.getUTCMilliseconds() / 10).toString().padStart(2, '0');
+            return `${m}:${s}.${mls}`;
+        }
+
+        function updateTimerDisplay() {
+            const now = Date.now();
+            const timeToShow = isRunning ? (elapsedTime + (now - startTime)) : elapsedTime;
+            document.getElementById('timer-display').textContent = formatTime(timeToShow);
+        }
+
+        function toggleTimer() {
+            triggerPulse(document.getElementById('panel-timer'));
+            const btn = document.getElementById('btn-start');
+
+            if (isRunning) {
+                clearInterval(timerInterval);
+                elapsedTime += Date.now() - startTime;
+                isRunning = false;
+                btn.textContent = "RESUME";
+                btn.style.color = "var(--eva-orange)";
+            } else {
+                if(currentMode === 'linked' && count >= parseInt(document.getElementById('target-count').value)){
+                   logToScreen("WARN: Increase target count.");
+                   return;
+                }
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimerDisplay, 30);
+                isRunning = true;
+                btn.textContent = "STOP";
+                btn.style.color = "var(--eva-red)";
+                btn.style.borderColor = "var(--eva-red)";
+            }
+        }
+
+        function resetTimer() {
+            if (isRunning) toggleTimer();
+            elapsedTime = 0;
+            lastLapTime = 0;
+            lapTimestamps = [0]; 
+            document.getElementById('timer-display').textContent = "00:00.00";
+            document.getElementById('timer-log').innerHTML = "";
+            document.getElementById('btn-start').textContent = "START [ENTER]";
+            document.getElementById('btn-start').style.color = "";
+            document.getElementById('btn-start').style.borderColor = "";
+        }
+
+        function recordLap(isAuto = false) {
+            if (!isRunning && elapsedTime === 0) return; 
+            const currentTime = isRunning ? (elapsedTime + (Date.now() - startTime)) : elapsedTime;
+            const interval = currentTime - lastLapTime;
+            
+            if (interval < 0) return;
+
+            const lapIndex = document.getElementById('timer-log').children.length + 1;
+            const type = isAuto ? `[CNT ${count}]` : `[MARK]`;
+            
+            const div = document.createElement('div');
+            div.className = 'log-item';
+            div.style.opacity = isAuto ? '1' : '0.8';
+            div.innerHTML = `<span>#${lapIndex.toString().padStart(2, '0')} ${type}</span><span>+${formatTime(interval)}</span>`;
+            
+            document.getElementById('timer-log').prepend(div);
+            lastLapTime = currentTime;
+            lapTimestamps.push(currentTime);
+        }
+
+        function calculateAverage(totalCounts) {
+            const avgMs = elapsedTime / totalCounts;
+            logToScreen("MISSION COMPLETE.");
+            const div = document.createElement('div');
+            div.className = 'log-item log-result';
+            div.innerHTML = `<span>AVG TIME:</span><span>${formatTime(avgMs)} / CNT</span>`;
+            document.getElementById('timer-log').prepend(div);
+        }
+
+        // ==========================================
+        // 3. 商人系统与倒计时
+        // ==========================================
+        function renderMerchants() {
+            const container = document.getElementById('merchant-container');
+            let html = '';
+
+            merchantData.forEach((city, index) => {
+                let goodsHtml = '';
+                city.goods.forEach(g => {
+                    goodsHtml += `
+                        <div class="good-item">
+                            <div class="good-name">${g.n}</div>
+                            <div class="good-price">${g.p}</div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div class="city-row" id="city-row-${index}">
+                        <div class="city-btn" 
+                             onmousedown="handleCityPressStart(${index})" 
+                             onmouseup="handleCityPressEnd(${index})"
+                             onmouseleave="handleCityPressCancel()"
+                             ontouchstart="handleCityPressStart(${index})" 
+                             ontouchend="handleCityPressEnd(${index})"
+                        >${city.city}</div>
+                        
+                        <div class="city-info">
+                            <div class="city-tabs">
+                                <div class="tab" id="tab-${index}-1">${city.tabs[0]}</div>
+                                <div class="tab" id="tab-${index}-2">${city.tabs[1]}</div>
+                            </div>
+                            <div class="goods-list">
+                                ${goodsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        let isLongPress = false;
+        
+        function handleCityPressStart(index) {
+            isLongPress = false;
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                cityStates[index] = 0;
+                updateCityUI(index);
+                if(navigator.vibrate) navigator.vibrate(50);
+            }, 500); 
+        }
+
+        function handleCityPressEnd(index) {
+            clearTimeout(longPressTimer);
+            if (!isLongPress) {
+                let current = cityStates[index];
+                if (current === 0) cityStates[index] = 1;
+                else if (current === 1) cityStates[index] = 2;
+                else cityStates[index] = 1;
+                updateCityUI(index);
+            }
+        }
+
+        function handleCityPressCancel() {
+            clearTimeout(longPressTimer);
+        }
+
+        function updateCityUI(index) {
+            const state = cityStates[index];
+            const tab1 = document.getElementById(`tab-${index}-1`);
+            const tab2 = document.getElementById(`tab-${index}-2`);
+            
+            tab1.classList.remove('active');
+            tab2.classList.remove('active');
+
+            if (state === 1) tab1.classList.add('active');
+            if (state === 2) tab2.classList.add('active');
+        }
+
+        function resetAllMerchants() {
+            cityStates = [0, 0, 0, 0, 0];
+            for (let i = 0; i < 5; i++) updateCityUI(i);
+            logToScreen("MARKET DATA RESET.");
+        }
+
+        function startAutoResetClock() {
+            setInterval(() => {
+                const now = new Date();
+                const m = now.getMinutes();
+                const s = now.getSeconds();
+                if (m % 10 === 0 && s === 10) {
+                    resetAllMerchants();
+                }
+            }, 1000);
+        }
+
+        function startMarketCountdown() {
+            setInterval(() => {
+                const now = new Date();
+                const m = now.getMinutes();
+                const s = now.getSeconds();
+                const totalSec = m * 60 + s;
+                const resetPoints = [10, 610, 1210, 1810, 2410, 3010, 3610];
+                let target = 0;
+                for (let point of resetPoints) {
+                    if (point > totalSec) {
+                        target = point;
+                        break;
+                    }
+                }
+                let diff = target - totalSec;
+                const mm = Math.floor(diff / 60).toString().padStart(2, '0');
+                const ss = (diff % 60).toString().padStart(2, '0');
+                
+                const el = document.getElementById('market-status');
+                el.textContent = `RESET: ${mm}:${ss}`;
+                el.classList.remove('warning', 'critical');
+                if (diff <= 15) {
+                    el.classList.add('critical');
+                } else if (diff <= 60) {
+                    el.classList.add('warning');
+                }
+            }, 1000);
+        }
+
+        // ==========================================
+        // 4. 全局重置
+        // ==========================================
+        function showResetModal() {
+            isResetPending = true;
+            document.getElementById('reset-modal').style.display = 'flex';
+        }
+
+        function confirmGlobalReset() {
+            resetCount();
+            resetTimer();
+            resetAllMerchants();
+            cancelGlobalReset(); 
+            logToScreen("GLOBAL RESET COMPLETED.");
+        }
+
+        function cancelGlobalReset() {
+            isResetPending = false;
+            document.getElementById('reset-modal').style.display = 'none';
+        }
+
+        // ==========================================
+        // 5. 辅助与事件
+        // ==========================================
+        function logToScreen(msg) {
+            const div = document.createElement('div');
+            div.className = 'log-item';
+            div.style.color = 'var(--eva-red)';
+            div.innerHTML = `<span>SYS:</span><span>${msg}</span>`;
+            document.getElementById('timer-log').prepend(div);
+        }
+
+        function toggleMode() {
+            const modes = document.getElementsByName('mode');
+            for(let m of modes) if(m.checked) currentMode = m.value;
+            
+            const linkedSet = document.getElementById('linked-settings');
+            const btnLap = document.getElementById('btn-lap');
+            
+            if (currentMode === 'linked') {
+                linkedSet.classList.add('active');
+                btnLap.disabled = true; 
+                btnLap.style.opacity = 0.3;
+                btnLap.textContent = "AUTO-SYNC";
+            } else {
+                linkedSet.classList.remove('active');
+                btnLap.disabled = false;
+                btnLap.style.opacity = 1;
+                btnLap.textContent = "LAP / MARK";
+            }
+        }
+
+        function triggerPulse(el) {
+            el.classList.remove('active-pulse');
+            void el.offsetWidth;
+            el.classList.add('active-pulse');
+        }
+
+        // 键盘监听逻辑更新
+        document.addEventListener('keydown', (e) => {
+            // 1. 模态框逻辑
+            if (isResetPending) {
+                if (e.code === 'Enter' || e.code === 'Backspace') {
+                    e.preventDefault();
+                    confirmGlobalReset();
+                } else if (e.code === 'Escape') {
+                    cancelGlobalReset();
+                }
+                return; 
+            }
+
+            // 2. 输入框安全检查：如果在输入框中，禁用特定快捷键以允许正常输入
+            const isInputActive = document.activeElement.tagName === 'INPUT';
+
+            // Space: 计数
+            if (e.code === 'Space') {
+                if (isInputActive) return; // 输入框中不触发计数
+                e.preventDefault(); 
+                incrementCount();
+            }
+            // Enter: 计时
+            else if (e.code === 'Enter') {
+                e.preventDefault();
+                toggleTimer();
+                if(isInputActive) document.activeElement.blur();
+            }
+            // Backspace: 全局重置
+            else if (e.code === 'Backspace') {
+                // [关键修复] 如果正在输入框打字，允许默认的删除行为，不弹出重置框
+                if (isInputActive) return;
+                
+                e.preventDefault(); 
+                showResetModal();
+            }
+        });
+
+    </script>
+</body>
+</html>

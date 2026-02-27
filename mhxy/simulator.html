@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>召唤兽属性模拟器 // KASPAR</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --border-color: #000000;
+            --resizer-width: 4px;
+            --font-stack: "SF Pro SC", "PingFang SC", "Microsoft YaHei", "Heiti SC", sans-serif;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-stack);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER --- */
+        header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 45px;
+            flex-shrink: 0;
+        }
+        h1 { font-size: 14px; font-weight: 900; letter-spacing: 1px; margin: 0; }
+        .version { font-size: 10px; background: #000; color: #fff; padding: 2px 4px; font-weight: bold;}
+
+        /* --- LAYOUT GRID --- */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px var(--resizer-width) 320px var(--resizer-width) 1fr;
+            height: calc(100vh - 45px);
+            width: 100%;
+        }
+
+        .panel {
+            padding: 20px;
+            overflow-y: auto;
+            min-width: 220px;
+        }
+        
+        .panel:last-child {
+            background-color: #fcfcfc; 
+            padding-left: 30px; 
+        }
+
+        /* --- RESIZER --- */
+        .resizer {
+            background: #eee;
+            cursor: col-resize;
+            transition: background 0.2s;
+            z-index: 10;
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+        }
+        .resizer:hover, .resizer.dragging { background: #000; border-color:#000; }
+
+        /* --- TYPOGRAPHY & INPUTS --- */
+        h2 {
+            font-size: 11px; text-transform: uppercase;
+            border-bottom: 2px solid #000; padding-bottom: 6px;
+            margin: 0 0 15px 0; letter-spacing: 0.5px; font-weight: 900;
+        }
+
+        .input-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; font-size: 12px; font-weight: 700;
+        }
+        
+        input[type="number"] {
+            border: 1px solid #ccc; width: 60px; text-align: right;
+            padding: 5px; font-weight: bold; font-family: 'Menlo', monospace; font-size: 12px;
+            outline: none; transition: 0.2s; background: #fff;
+        }
+        input[type="number"]:focus { border-color: #000; background: #f0f0f0; }
+
+        /* --- SKILL BUTTONS --- */
+        .skill-block { margin-bottom: 15px; }
+        .skill-header { font-size: 11px; font-weight: 800; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;}
+        .skill-toggles { display: flex; border: 1px solid #000; }
+        
+        .toggle-btn {
+            flex: 1; text-align: center; font-size: 10px; padding: 6px 0;
+            cursor: pointer; background: #fff; border-right: 1px solid #000;
+            font-weight: 800; transition: 0.1s;
+        }
+        .toggle-btn:last-child { border-right: none; }
+        .toggle-btn:hover { background: #eee; }
+        .toggle-btn.active { background: #000; color: #fff; }
+        
+        .skill-desc {
+            font-size: 10px; color: #666; font-style: normal; font-weight: normal;
+        }
+
+        /* --- MIDDLE COLUMN --- */
+        .points-info {
+            background: #000; color: #fff; padding: 8px; 
+            display: flex; justify-content: space-between; font-size: 12px; font-weight: 800;
+            margin-bottom: 15px;
+        }
+        .dist-row {
+            display: grid; grid-template-columns: 40px 1fr 50px 1fr; 
+            align-items: center; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px;
+        }
+        .stat-name { font-weight: 900; font-size: 13px; }
+        .stat-val { text-align: center; font-family: 'Menlo', monospace; font-size: 14px; font-weight: bold;}
+        .stat-added { font-size: 10px; color: #888; display: block; text-align: center; font-family: 'Menlo', monospace;}
+        
+        .btn-mini {
+            width: 24px; height: 24px; border: 1px solid #ccc; background: #fff; cursor: pointer;
+            font-size: 10px; padding: 0; font-weight: 900; font-family: var(--font-stack);
+        }
+        .btn-mini:hover { border-color: #000; background: #000; color: #fff; }
+
+        /* Init Stats - Vertical Layout */
+        .init-section-title {
+            font-size: 10px; color: #888; text-transform: uppercase; font-weight: 800;
+            margin-top: 30px; margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px;
+        }
+        .init-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #f5f5f5;
+        }
+        .init-label { font-size: 12px; font-weight: 700; color: #555; }
+
+        /* --- RIGHT COLUMN --- */
+        .mode-tabs { display: flex; border-bottom: 2px solid #000; margin-bottom: 20px; }
+        .mode-tab { 
+            flex: 1; text-align: center; padding: 10px; font-size: 12px; font-weight: 900; 
+            cursor: pointer; opacity: 0.4; transition: 0.2s;
+        }
+        .mode-tab.active { opacity: 1; background: #eee; }
+
+        /* Unified Table Style */
+        .res-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        .res-table th { 
+            text-align: left; font-size: 10px; color: #999; 
+            border-bottom: 1px solid #ccc; padding-bottom: 6px; font-weight: 700;
+        }
+        .res-table td { 
+            padding: 10px 0; border-bottom: 1px solid #eee; vertical-align: middle; 
+            font-size: 14px;
+        }
+        
+        /* Font Weights Consistency */
+        .res-table td:first-child { font-weight: 900; font-size: 12px; width: 35%; } /* Label Column */
+        
+        .val-base { color: #999; font-family: 'Menlo', monospace; font-size: 13px; font-weight: 500;}
+        .val-final { color: #000; font-family: 'Menlo', monospace; font-size: 16px; font-weight: 900; }
+        
+        .tag-bonus { 
+            font-size: 9px; background: #000; color: #fff; padding: 1px 3px; 
+            border-radius: 2px; margin-left: 5px; font-weight: bold; font-family: 'Menlo', monospace;
+        }
+
+        /* Tooltip Logic */
+        .hover-target { border-bottom: 1px dashed #000; cursor: help; position: relative; }
+        .tooltip {
+            visibility: hidden; position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.95); color: #fff; padding: 10px; border-radius: 4px;
+            width: 220px; font-size: 11px; line-height: 1.5; z-index: 100; text-align: left;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); pointer-events: none; opacity: 0; transition: opacity 0.2s;
+        }
+        .tooltip::after {
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: black transparent transparent transparent;
+        }
+        .hover-target:hover .tooltip { visibility: visible; opacity: 1; }
+
+        .breakdown-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 3px 0; }
+        .breakdown-row:last-child { border: none; }
+        .bd-label { color: #aaa; } .bd-val { color: #fff; font-weight: bold; font-family: 'Menlo', monospace;}
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>召唤兽属性模拟器 // KASPAR</h1>
+    <div class="version">V 4.1</div>
+</header>
+
+<div class="main-layout" id="mainLayout">
+    
+    <!-- PANEL 1: CONFIG -->
+    <div class="panel" id="panelLeft">
+        <h2>01. 基础设定</h2>
+        <div class="input-row"><label>初始等级</label><input type="number" id="initLevel" value="0" onchange="resetAndCalc()"></div>
+        <div class="input-row"><label>目标等级</label><input type="number" id="targetLevel" value="119" onchange="calculate()"></div>
+        <div class="input-row"><label>成长率</label><input type="number" id="growth" value="1.23" step="0.001" onchange="calculate()"></div>
+        
+        <div style="height:15px; border-bottom:1px dotted #ccc; margin-bottom:20px;"></div>
+
+        <div class="input-row"><label>攻击资质</label><input type="number" id="q_atk" value="1500" onchange="calculate()"></div>
+        <div class="input-row"><label>防御资质</label><input type="number" id="q_def" value="1400" onchange="calculate()"></div>
+        <div class="input-row"><label>体力资质</label><input type="number" id="q_hp" value="4500" onchange="calculate()"></div>
+        <div class="input-row"><label>法力资质</label><input type="number" id="q_mp" value="2500" onchange="calculate()"></div>
+        <div class="input-row"><label>速度资质</label><input type="number" id="q_spd" value="1440" onchange="calculate()"></div>
+
+        <h2 style="margin-top:30px;">02. 技能配置</h2>
+        
+        <!-- Skill: Agility -->
+        <div class="skill-block">
+            <div class="skill-header"><span>敏捷 (速度)</span><span id="txt_agi" class="skill-desc">无效果</span></div>
+            <div class="skill-toggles" id="tog_agi">
+                <div class="toggle-btn active" onclick="setSkill('agi', 0)">OFF</div>
+                <div class="toggle-btn" onclick="setSkill('agi', 1)">低级</div>
+                <div class="toggle-btn" onclick="setSkill('agi', 2)">高级</div>
+            </div>
+        </div>
+
+        <!-- Skill: Strength -->
+        <div class="skill-block">
+            <div class="skill-header"><span>强力 (伤害)</span><span id="txt_str" class="skill-desc">无效果</span></div>
+            <div class="skill-toggles" id="tog_str">
+                <div class="toggle-btn active" onclick="setSkill('str', 0)">OFF</div>
+                <div class="toggle-btn" onclick="setSkill('str', 1)">低级</div>
+                <div class="toggle-btn" onclick="setSkill('str', 2)">高级</div>
+            </div>
+        </div>
+
+        <!-- Skill: Sneak -->
+        <div class="skill-block">
+            <div class="skill-header"><span>偷袭 (结果)</span><span id="txt_snk" class="skill-desc">无效果</span></div>
+            <div class="skill-toggles" id="tog_snk">
+                <div class="toggle-btn active" onclick="setSkill('snk', 0)">OFF</div>
+                <div class="toggle-btn" onclick="setSkill('snk', 1)">低级</div>
+                <div class="toggle-btn" onclick="setSkill('snk', 2)">高级</div>
+            </div>
+        </div>
+
+        <!-- Skill: Defense -->
+        <div class="skill-block">
+            <div class="skill-header"><span>防御 (防御)</span><span id="txt_def" class="skill-desc">无效果</span></div>
+            <div class="skill-toggles" id="tog_def">
+                <div class="toggle-btn active" onclick="setSkill('def', 0)">OFF</div>
+                <div class="toggle-btn" onclick="setSkill('def', 1)">低级</div>
+                <div class="toggle-btn" onclick="setSkill('def', 2)">高级</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESIZER 1 -->
+    <div class="resizer" id="resizer1"></div>
+
+    <!-- PANEL 2: POINTS -->
+    <div class="panel" id="panelMid">
+        <h2>03. 潜能分配</h2>
+        <div class="points-info">
+            <span>REMAINING POINTS</span>
+            <span id="remainingPoints">0</span>
+        </div>
+
+        <div id="distributor"></div>
+
+        <!-- Vertical Init Stats -->
+        <div class="init-section-title">初始属性 (INIT STATS)</div>
+        
+        <div class="init-row">
+            <span class="init-label">体质 (Body)</span>
+            <input type="number" id="i_con" value="20" onchange="calculate()">
+        </div>
+        <div class="init-row">
+            <span class="init-label">法力 (Magic)</span>
+            <input type="number" id="i_mag" value="20" onchange="calculate()">
+        </div>
+        <div class="init-row">
+            <span class="init-label">力量 (Str)</span>
+            <input type="number" id="i_str" value="20" onchange="calculate()">
+        </div>
+        <div class="init-row">
+            <span class="init-label">耐力 (Endur)</span>
+            <input type="number" id="i_end" value="20" onchange="calculate()">
+        </div>
+        <div class="init-row">
+            <span class="init-label">敏捷 (Agility)</span>
+            <input type="number" id="i_agi" value="20" onchange="calculate()">
+        </div>
+
+    </div>
+
+    <!-- RESIZER 2 -->
+    <div class="resizer" id="resizer2"></div>
+
+    <!-- PANEL 3: RESULTS -->
+    <div class="panel" id="panelRight">
+        <div class="mode-tabs">
+            <div class="mode-tab active" id="tab_pve" onclick="setMode('pve')">PVE (任务)</div>
+            <div class="mode-tab" id="tab_pvp" onclick="setMode('pvp')">PVP (PK)</div>
+        </div>
+
+        <h2>04. 最终面板 (Final Stats)</h2>
+        <table class="res-table">
+            <thead>
+                <tr>
+                    <th>ATTR</th>
+                    <th>BASE (原始)</th>
+                    <th>FINAL (战斗)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>伤害 DMG</td>
+                    <td><span class="val-base" id="base_dmg">0</span></td>
+                    <td><span class="val-final" id="final_dmg">0</span><span id="tag_dmg" class="tag-bonus" style="display:none">BUFF</span></td>
+                </tr>
+                <tr>
+                    <td>防御 DEF</td>
+                    <td><span class="val-base" id="base_def">0</span></td>
+                    <td><span class="val-final" id="final_def">0</span><span id="tag_def" class="tag-bonus" style="display:none">BUFF</span></td>
+                </tr>
+                <tr>
+                    <td>速度 SPD</td>
+                    <td><span class="val-base" id="base_spd">0</span></td>
+                    <td><span class="val-final" id="final_spd">0</span><span id="tag_spd" class="tag-bonus" style="display:none">BUFF</span></td>
+                </tr>
+                 <tr>
+                    <td>气血 HP</td>
+                    <td><span class="val-base" id="base_hp">0</span></td>
+                    <td><span class="val-final" id="final_hp">0</span></td>
+                </tr>
+                <tr>
+                    <td>灵力 SPI</td>
+                    <td><span class="val-base" id="base_spi">0</span></td>
+                    <td><span class="val-final" id="final_spi">0</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>05. 逆向推导 (Reverse Eng.)</h2>
+        <div style="font-size:10px; color:#888; margin-bottom:10px;">
+            * 鼠标悬停查看详细构成
+        </div>
+        
+        <table class="res-table">
+            <thead>
+                <tr>
+                    <th>SKILL TYPE</th>
+                    <th>等效资质 (Qual)</th>
+                    <th>等效点数 (Pt)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>强/偷加成</td>
+                    <td>
+                        <span class="hover-target" id="ht_atk">
+                            <span class="val-final" id="eq_atk">--</span>
+                            <div class="tooltip" id="tt_atk">无加成</div>
+                        </span>
+                    </td>
+                    <td><span class="val-final" id="ep_str">--</span></td>
+                </tr>
+                <tr>
+                    <td>防御加成</td>
+                    <td>
+                        <span class="hover-target" id="ht_def">
+                            <span class="val-final" id="eq_def">--</span>
+                            <div class="tooltip" id="tt_def">无加成</div>
+                        </span>
+                    </td>
+                    <td><span class="val-final" id="ep_end">--</span></td>
+                </tr>
+                <tr>
+                    <td>敏捷加成</td>
+                    <td>
+                        <span class="hover-target" id="ht_spd">
+                            <span class="val-final" id="eq_spd">--</span>
+                            <div class="tooltip" id="tt_spd">无加成</div>
+                        </span>
+                    </td>
+                    <td><span class="val-final" id="ep_agi">--</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<script>
+    /* --- STATE --- */
+    let currentMode = 'pve';
+    const addedPoints = { con: 0, mag: 0, str: 0, end: 0, agi: 0 };
+    const skillState = { agi: 0, str: 0, snk: 0, def: 0 };
+    const statsMap = [
+        { key: 'con', label: '体质' }, { key: 'mag', label: '法力' },
+        { key: 'str', label: '力量' }, { key: 'end', label: '耐力' },
+        { key: 'agi', label: '敏捷' }
+    ];
+
+    /* --- INITIALIZATION --- */
+    function init() {
+        renderDistributor();
+        calculate();
+        initResizers();
+    }
+
+    /* --- SKILL LOGIC --- */
+    function setSkill(type, level) {
+        skillState[type] = level;
+        
+        // Update UI Buttons
+        const container = document.getElementById(`tog_${type}`);
+        const btns = container.children;
+        for (let i = 0; i < btns.length; i++) {
+            btns[i].className = (i === level) ? 'toggle-btn active' : 'toggle-btn';
+        }
+
+        // Update Description Text
+        const txtEl = document.getElementById(`txt_${type}`);
+        let txt = "无效果";
+        if (level > 0) {
+            if (type === 'agi') txt = level === 1 ? "速度 × 1.1" : "速度 × 1.2";
+            if (type === 'snk') txt = level === 1 ? "结果 × 1.05" : "结果 × 1.1";
+            if (type === 'str') txt = level === 1 ? "+ 等级 × 0.4" : "+ 等级 × 0.55";
+            if (type === 'def') txt = level === 1 ? "+ 等级 × 0.6" : "+ 等级 × 0.8";
+        }
+        txtEl.innerText = txt;
+
+        calculate();
+    }
+
+    /* --- MODE LOGIC --- */
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('tab_pve').className = mode === 'pve' ? 'mode-tab active' : 'mode-tab';
+        document.getElementById('tab_pvp').className = mode === 'pvp' ? 'mode-tab active' : 'mode-tab';
+        calculate();
+    }
+
+    /* --- CALCULATION LOGIC --- */
+    function getInputs() {
+        return {
+            initLv: parseInt(document.getElementById('initLevel').value) || 0,
+            targetLv: parseInt(document.getElementById('targetLevel').value) || 0,
+            growth: parseFloat(document.getElementById('growth').value) || 0,
+            qual: {
+                atk: parseInt(document.getElementById('q_atk').value) || 0,
+                def: parseInt(document.getElementById('q_def').value) || 0,
+                hp: parseInt(document.getElementById('q_hp').value) || 0,
+                mp: parseInt(document.getElementById('q_mp').value) || 0,
+                spd: parseInt(document.getElementById('q_spd').value) || 0
+            },
+            initStats: {
+                con: parseInt(document.getElementById('i_con').value) || 0,
+                mag: parseInt(document.getElementById('i_mag').value) || 0,
+                str: parseInt(document.getElementById('i_str').value) || 0,
+                end: parseInt(document.getElementById('i_end').value) || 0,
+                agi: parseInt(document.getElementById('i_agi').value) || 0
+            }
+        };
+    }
+
+    function calculate() {
+        const data = getInputs();
+        const levelDiff = Math.max(0, data.targetLv - data.initLv);
+        const naturalGain = levelDiff * 1; 
+        const totalPotential = levelDiff * 5;
+
+        // 1. Points
+        let currentUsed = 0;
+        for (let k in addedPoints) currentUsed += addedPoints[k];
+        if (currentUsed > totalPotential) {
+            for (let k in addedPoints) addedPoints[k] = 0;
+            currentUsed = 0;
+        }
+        document.getElementById('remainingPoints').innerText = totalPotential - currentUsed;
+
+        // 2. Stats & Base Panel
+        const S = {};
+        statsMap.forEach(s => {
+            const added = addedPoints[s.key];
+            S[s.key] = data.initStats[s.key] + naturalGain + added;
+            document.getElementById(`val_${s.key}`).innerText = S[s.key];
+            document.getElementById(`add_${s.key}`).innerText = added >= 0 ? '+' + added : added;
+        });
+
+        const LV = data.targetLv;
+        const G = data.growth;
+        const Q = data.qual;
+
+        const baseHp = (LV * Q.hp / 1000) + (S.con * G * 6);
+        const baseMp = (LV * Q.mp / 500) + (S.mag * G * 3);
+        const baseDmg = (LV * Q.atk / 1000 * 4/3) * (1.4 + G) + (S.str * G);
+        const baseDef = (LV * Q.def / 1000 * 7/8) * (1.4 + G) + (S.end * G * 1.33);
+        const baseSpi = LV * (Q.mp * 3 + 5000) / 10000 + (S.con * 0.3) + (S.mag * 0.7) + (S.str * 0.4) + (S.end * 0.2);
+        const baseSpd = S.agi * (Q.spd / 1000);
+
+        document.getElementById('base_dmg').innerText = Math.floor(baseDmg);
+        document.getElementById('base_def').innerText = Math.floor(baseDef);
+        document.getElementById('base_spd').innerText = Math.floor(baseSpd);
+        document.getElementById('base_hp').innerText = Math.floor(baseHp);
+        document.getElementById('base_spi').innerText = Math.floor(baseSpi);
+        
+        document.getElementById('final_hp').innerText = Math.floor(baseHp);
+        document.getElementById('final_spi').innerText = Math.floor(baseSpi);
+
+        // 3. Skills & Coefficients
+        const isPVE = currentMode === 'pve';
+        const coeff = isPVE ? 1.3 : 1.2;
+
+        let finalDmg = baseDmg;
+        let finalDef = baseDef;
+        let finalSpd = baseSpd;
+
+        let bonus_Str = 0; // Raw value from QiangLi
+        let bonus_Snk = 0; // Value added by TouXi
+        let bonus_Def = 0;
+        let bonus_Agi = 0;
+
+        // Calc Strength (Base Addition)
+        if (skillState.str > 0) {
+            const rate = skillState.str === 1 ? 0.4 : 0.55;
+            bonus_Str = (LV * rate) / coeff;
+            finalDmg += bonus_Str;
+        }
+
+        // Calc Sneak (Multiplier on Final)
+        if (skillState.snk > 0) {
+            const rate = skillState.snk === 1 ? 1.05 : 1.10;
+            const pre = finalDmg;
+            finalDmg = finalDmg * rate;
+            bonus_Snk = finalDmg - pre;
+        }
+
+        // Calc Defense
+        if (skillState.def > 0) {
+            const rate = skillState.def === 1 ? 0.6 : 0.8;
+            bonus_Def = (LV * rate) / coeff;
+            finalDef += bonus_Def;
+        }
+
+        // Calc Agility
+        if (skillState.agi > 0) {
+            const rate = skillState.agi === 1 ? 1.1 : 1.2;
+            const pre = finalSpd;
+            finalSpd = finalSpd * rate;
+            bonus_Agi = finalSpd - pre;
+        }
+
+        // Update UI Results
+        updateFinalUI('dmg', finalDmg, bonus_Str + bonus_Snk);
+        updateFinalUI('def', finalDef, bonus_Def);
+        updateFinalUI('spd', finalSpd, bonus_Agi);
+
+        // 4. Reverse Engineering (Breakdown)
+        
+        // -- Attack Breakdown --
+        const atkFactor = (LV / 1000 * 1.3333) * (1.4 + G);
+        const ptFactorStr = G;
+        
+        if (bonus_Str + bonus_Snk > 0) {
+            const qStr = atkFactor > 0 ? (bonus_Str / atkFactor) : 0;
+            const qSnk = atkFactor > 0 ? (bonus_Snk / atkFactor) : 0;
+            const totalQ = Q.atk + qStr + qSnk;
+            const totalBonusPt = (bonus_Str + bonus_Snk) / ptFactorStr;
+
+            document.getElementById('eq_atk').innerText = Math.floor(totalQ);
+            document.getElementById('ep_str').innerText = '+' + Math.floor(totalBonusPt);
+            
+            // Generate Breakdown HTML
+            document.getElementById('tt_atk').innerHTML = `
+                <div class="breakdown-row"><span class="bd-label">原始资质</span><span class="bd-val">${Q.atk}</span></div>
+                ${bonus_Str > 0 ? `<div class="breakdown-row"><span class="bd-label">强力加成</span><span class="bd-val">+${Math.floor(qStr)}</span></div>` : ''}
+                ${bonus_Snk > 0 ? `<div class="breakdown-row"><span class="bd-label">偷袭加成</span><span class="bd-val">+${Math.floor(qSnk)}</span></div>` : ''}
+                <div class="breakdown-row" style="border-top:1px solid #555; margin-top:2px; padding-top:2px;"><span class="bd-label">总计</span><span class="bd-val">${Math.floor(totalQ)}</span></div>
+            `;
+        } else {
+            clearEquiv('atk', 'str');
+        }
+
+        // -- Def Breakdown --
+        const defFactor = (LV / 1000 * 0.875) * (1.4 + G);
+        if (bonus_Def > 0) {
+            const qDef = defFactor > 0 ? (bonus_Def / defFactor) : 0;
+            const totalQ = Q.def + qDef;
+            const totalPt = bonus_Def / (G * 1.33);
+
+            document.getElementById('eq_def').innerText = Math.floor(totalQ);
+            document.getElementById('ep_end').innerText = '+' + Math.floor(totalPt);
+            
+             document.getElementById('tt_def').innerHTML = `
+                <div class="breakdown-row"><span class="bd-label">原始资质</span><span class="bd-val">${Q.def}</span></div>
+                <div class="breakdown-row"><span class="bd-label">防御加成</span><span class="bd-val">+${Math.floor(qDef)}</span></div>
+                <div class="breakdown-row" style="border-top:1px solid #555; margin-top:2px; padding-top:2px;"><span class="bd-label">总计</span><span class="bd-val">${Math.floor(totalQ)}</span></div>
+            `;
+        } else {
+            clearEquiv('def', 'end');
+        }
+
+        // -- Spd Breakdown --
+        if (bonus_Agi > 0) {
+            const qSpd = S.agi > 0 ? (bonus_Agi / S.agi * 1000) : 0;
+            const totalQ = Q.spd + qSpd;
+            const totalPt = bonus_Agi / (Q.spd/1000);
+
+            document.getElementById('eq_spd').innerText = Math.floor(totalQ);
+            document.getElementById('ep_agi').innerText = '+' + Math.floor(totalPt);
+            
+             document.getElementById('tt_spd').innerHTML = `
+                <div class="breakdown-row"><span class="bd-label">原始资质</span><span class="bd-val">${Q.spd}</span></div>
+                <div class="breakdown-row"><span class="bd-label">敏捷加成</span><span class="bd-val">+${Math.floor(qSpd)}</span></div>
+                <div class="breakdown-row" style="border-top:1px solid #555; margin-top:2px; padding-top:2px;"><span class="bd-label">总计</span><span class="bd-val">${Math.floor(totalQ)}</span></div>
+            `;
+        } else {
+            clearEquiv('spd', 'agi');
+        }
+    }
+
+    function updateFinalUI(key, val, bonus) {
+        document.getElementById(`final_${key}`).innerText = Math.floor(val);
+        const tag = document.getElementById(`tag_${key}`);
+        if (bonus > 1) {
+            tag.innerText = "+" + Math.floor(bonus);
+            tag.style.display = 'inline-block';
+        } else {
+            tag.style.display = 'none';
+        }
+    }
+
+    function clearEquiv(qKey, pKey) {
+        document.getElementById(`eq_${qKey}`).innerText = '--';
+        document.getElementById(`ep_${pKey}`).innerText = '--';
+        document.getElementById(`tt_${qKey}`).innerText = '无技能加成';
+    }
+
+    /* --- DOM HELPERS --- */
+    function modifyPoint(statKey, delta) {
+        const data = getInputs();
+        const levelDiff = Math.max(0, data.targetLv - data.initLv);
+        const totalPot = levelDiff * 5;
+        let currentUsed = 0;
+        for (let k in addedPoints) currentUsed += addedPoints[k];
+        const remaining = totalPot - currentUsed;
+
+        if (delta > 0 && remaining < delta) delta = remaining; 
+        if (delta < 0 && addedPoints[statKey] + delta < 0) delta = -addedPoints[statKey];
+        if (delta === 0) return;
+
+        addedPoints[statKey] += delta;
+        calculate();
+    }
+
+    function resetAndCalc() {
+        for (let k in addedPoints) addedPoints[k] = 0;
+        calculate();
+    }
+
+    function renderDistributor() {
+        const container = document.getElementById('distributor');
+        container.innerHTML = '';
+        statsMap.forEach(stat => {
+            const row = document.createElement('div');
+            row.className = 'dist-row';
+            row.innerHTML = `
+                <span class="stat-name">${stat.label}</span>
+                <div class="btn-group" style="display:flex; justify-content:center; gap:2px;">
+                    <button class="btn-mini" onclick="modifyPoint('${stat.key}', -10)">-10</button>
+                    <button class="btn-mini" onclick="modifyPoint('${stat.key}', -1)">-</button>
+                </div>
+                <div>
+                    <div class="stat-val" id="val_${stat.key}">0</div>
+                    <span class="stat-added" id="add_${stat.key}">+0</span>
+                </div>
+                <div class="btn-group" style="display:flex; justify-content:center; gap:2px;">
+                    <button class="btn-mini" onclick="modifyPoint('${stat.key}', 1)">+</button>
+                    <button class="btn-mini" onclick="modifyPoint('${stat.key}', 10)">+10</button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    /* --- RESIZABLE COLUMNS LOGIC --- */
+    function initResizers() {
+        const grid = document.getElementById('mainLayout');
+        const resizer1 = document.getElementById('resizer1');
+        const resizer2 = document.getElementById('resizer2');
+        
+        setupResizer(resizer1, 0); 
+        setupResizer(resizer2, 2); 
+        
+        function setupResizer(resizer, colIndex) {
+            let startX, startWidth;
+            resizer.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                startX = e.clientX;
+                const computedStyle = window.getComputedStyle(grid);
+                const cols = computedStyle.gridTemplateColumns.split(' ');
+                startWidth = parseFloat(cols[colIndex]);
+                
+                resizer.classList.add('dragging');
+                document.documentElement.style.cursor = 'col-resize';
+                
+                function onMouseMove(e) {
+                    const deltaX = e.clientX - startX;
+                    let newWidth = startWidth + deltaX;
+                    if (newWidth < 200) newWidth = 200;
+                    if (newWidth > 600) newWidth = 600;
+                    
+                    const currentCols = grid.style.gridTemplateColumns 
+                        ? grid.style.gridTemplateColumns.split(' ') 
+                        : ['300px', '4px', '320px', '4px', '1fr'];
+                    
+                    let c1 = parseFloat(currentCols[0]) || 300;
+                    let c2 = parseFloat(currentCols[2]) || 320;
+                    
+                    if (colIndex === 0) c1 = newWidth;
+                    if (colIndex === 2) c2 = newWidth;
+                    
+                    grid.style.gridTemplateColumns = `${c1}px var(--resizer-width) ${c2}px var(--resizer-width) 1fr`;
+                }
+                function onMouseUp() {
+                    resizer.classList.remove('dragging');
+                    document.documentElement.style.cursor = 'default';
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>
