@@ -1,29 +1,24 @@
-# MHXY Tools
+# STP Tools
 
-这是一个简单的梦幻西游工具集合，包含：
-- 跑商抓鬼计时器 (`/mhxy/timer`)
-- 召唤兽模拟器 (`/mhxy/summoner`)
+这是一个包含梦幻西游工具集的简单静态网站项目。
 
-## 如何部署到 Vercel
+## 工具列表
 
-### 方法一：使用 Vercel CLI (推荐)
+- **Timer (计时器)**: `/timer` (对应文件: `mhxy/timer.html`)
+- **Simulator (模拟器)**: `/simulator` (对应文件: `mhxy/simulator.html`)
 
-1.  安装 Vercel CLI:
-    ```bash
-    npm i -g vercel
-    ```
-2.  在当前目录运行:
-    ```bash
-    vercel
-    ```
-    (一路按回车确认即可)
+## 部署说明
 
-### 方法二：使用 GitHub
+本项目配置为使用 Vercel 部署。
 
-1.  将此文件夹推送到 GitHub 仓库。
-2.  在 Vercel 控制台导入该仓库。
+### 目录结构
 
-## 域名配置
+- `mhxy/`: 包含具体的工具 HTML 文件。
+- `vercel.json`: Vercel 的路由配置文件，用于将 `/timer` 映射到具体文件。
+- `index.html`: 简单的导航主页。
 
-部署完成后，在 Vercel 项目设置中添加自定义域名 `tools.stp-studio.xyz`。
-然后根据提示在你的域名服务商处添加 CNAME 记录指向 Vercel。
+### 如何更新
+
+1. 修改 `mhxy/` 下的 HTML 文件。
+2. 提交代码到 GitHub。
+3. Vercel 会自动重新部署。

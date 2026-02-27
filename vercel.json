@@ -1,6 +1,12 @@
 {
   "rewrites": [
-    { "source": "/mhxy/timer", "destination": "/mhxy/timer.html" },
-    { "source": "/mhxy/summoner", "destination": "/mhxy/summoner.html" }
+    {
+      "source": "/timer",
+      "destination": "/mhxy/timer.html"
+    },
+    {
+      "source": "/simulator",
+      "destination": "/mhxy/simulator.html"
+    }
   ]
 }
