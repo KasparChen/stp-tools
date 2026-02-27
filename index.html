@@ -136,8 +136,9 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            height: 220px;
-            overflow: hidden;
+            justify-content: space-between;
+            min-height: 220px;
+            height: auto;
         }
 
         .card::before {
@@ -181,12 +182,13 @@
         .tool-desc {
             font-size: 0.9rem;
             color: var(--text-dim);
-            margin-bottom: auto;
+            margin-bottom: 20px;
             line-height: 1.6;
+            flex-grow: 1;
         }
 
         .card-bottom {
-            margin-top: 20px;
+            margin-top: auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -271,10 +273,10 @@
                 <!-- Tool 1: Timer -->
                 <a href="/mhxy/timer" class="card">
                     <div class="card-top">
-                        <span>ID: TMR-V7</span>
+                        <span>ID: MHXY-01</span>
                         <span>UTILITY</span>
                     </div>
-                    <div class="tool-title">CHRONO UNIT</div>
+                    <div class="tool-title">MERCHANT TIMER</div>
                     <p class="tool-desc">
                         Advanced timing system for merchant runs and ghost hunting tasks. Features lap tracking and sync modes.
                     </p>
@@ -287,10 +289,10 @@
                 <!-- Tool 2: Simulator -->
                 <a href="/mhxy/simulator" class="card">
                     <div class="card-top">
-                        <span>ID: SIM-V4</span>
+                        <span>ID: MHXY-02</span>
                         <span>CALCULATOR</span>
                     </div>
-                    <div class="tool-title">SUMMONER SIM</div>
+                    <div class="tool-title">BB GROWTH SIMULATOR</div>
                     <p class="tool-desc">
                         Attribute simulation and reverse engineering tool for summoner stats. Supports PVE/PVP modes.
                     </p>
@@ -313,7 +315,7 @@
                 <!-- Placeholder -->
                 <div class="card locked">
                     <div class="card-top">
-                        <span>ID: UNK-??</span>
+                        <span>ID: LAB-01</span>
                         <span>CLASSIFIED</span>
                     </div>
                     <div class="tool-title">COMING SOON</div>
@@ -331,7 +333,7 @@
 
     <footer>
         <p>STP STUDIO © 2026 // DESIGNED FOR EFFICIENCY</p>
-        <p style="margin-top: 10px; font-size: 0.7rem; color: #333;">VER: 2.0.1 // NODE: TOKYO</p>
+        <p style="margin-top: 10px; font-size: 0.7rem; color: #333;">VER: 2.0.2 // NODE: TOKYO</p>
     </footer>
 
 </body>
